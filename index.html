@@ -26,12 +26,12 @@
         }
         #textInput {
             font-size: 16px;
-            display: none; /* El campo de texto no es accesible hasta iniciar */
+            display: none; /* El campo de texto no es accesible hasta "Iniciar" */
         }
     </style>
 </head>
 <body>
-    <h1>Touch Input Test</h1>
+    <h1>Touch Input Test con Tiempo y Borrados</h1>
 
     <form id="userForm">
         <label for="age">Edad (solo 2 dígitos):</label>
@@ -51,15 +51,15 @@
         <button type="button" id="actionButton">Iniciar</button>
     </form>
 
-    <!-- Scripts de Firebase (versión modular) -->
+    <!-- Versión modular de Firebase -->
     <script type="module">
-        // Importar funciones de Firebase
+        // 1. Importar funciones de Firebase (versión modular)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
         import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
-        // Configuración de tu proyecto Firebase
+        // 2. Configuración de tu proyecto en Firebase
         const firebaseConfig = {
-          apiKey: "AIza...",
+          apiKey: "AIzaSyBfsRt...",
           authDomain: "touch-input-test.firebaseapp.com",
           databaseURL: "https://touch-input-test-default-rtdb.asia-southeast1.firebasedatabase.app",
           projectId: "touch-input-test",
@@ -68,19 +68,32 @@
           appId: "1:999206060657:web:5af8cf061b05db6c0ad1d0"
         };
 
-        // Inicializar Firebase
+        // 3. Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Variables para el formulario
+        // 4. Capturamos variables del formulario
         let actionButton = document.getElementById("actionButton");
         let textInputField = document.getElementById("textInput");
+
+        let startTime = 0;        // Momento al hacer clic en "Iniciar"
+        let backspaceCount = 0;   // Cantidad de borrados detectados
 
         // Deshabilitar el campo de texto hasta que se presione "Iniciar"
         textInputField.disabled = true;
 
+        // 5. Detectar borrados en el textarea
+        textInputField.addEventListener('input', function(e) {
+          // Si detectamos un borrado, el 'inputType' puede ser "deleteContentBackward"
+          if (e.inputType === 'deleteContentBackward') {
+            backspaceCount++;
+          }
+        });
+
+        // 6. Lógica para el botón Iniciar/Finalizar
         actionButton.addEventListener("click", function() {
             if (actionButton.textContent === "Iniciar") {
+                // Verificar si la edad y el sexo son válidos antes de iniciar
                 let age = document.getElementById("age").value;
                 let sex = document.getElementById("sex").value;
 
@@ -93,13 +106,17 @@
                     return;
                 }
 
-                // Iniciar el proceso
-                textInputField.style.display = "block";
-                textInputField.disabled = false;
+                // Iniciar: habilitar textarea y registrar el startTime
+                textInputField.style.display = "block"; 
+                textInputField.disabled = false; 
                 textInputField.focus();
                 actionButton.textContent = "Finalizar";
+
+                startTime = Date.now();     // Guardamos el tiempo de inicio
+                backspaceCount = 0;        // Reiniciamos el contador de borrados
+
             } else {
-                // Ya es "Finalizar", guardamos en Firebase
+                // Al "Finalizar", guardamos los datos
                 let age = document.getElementById("age").value;
                 let sex = document.getElementById("sex").value;
                 let textInput = document.getElementById("textInput").value;
@@ -111,13 +128,19 @@
 
                 actionButton.disabled = true;
 
+                // Tiempo transcurrido en milisegundos
+                let endTime = Date.now();
+                let timeSpent = endTime - startTime; 
+
                 // Guardar en Realtime Database
                 const nuevaRef = push(ref(db, "datos")); 
                 set(nuevaRef, {
                   edad: age,
                   sexo: sex,
                   texto: textInput,
-                  timestamp: Date.now()
+                  timeSpent: timeSpent,         // en ms
+                  backspaceCount: backspaceCount,
+                  timestamp: endTime           // fecha/hora final
                 })
                 .then(() => {
                   alert("Datos guardados en Firebase");
@@ -132,6 +155,7 @@
             }
         });
 
+        // 7. Restablecer la interfaz
         function resetForm() {
             actionButton.textContent = "Iniciar";
             textInputField.style.display = "none";
@@ -141,7 +165,7 @@
             document.getElementById("textInput").value = "";
         }
 
-        // Limitar la entrada de la edad a 2 dígitos
+        // 8. Limitar la entrada de la edad a 2 dígitos
         document.getElementById("age").addEventListener("input", function() {
             let age = document.getElementById("age").value;
             if (age.length > 2) {
