@@ -1,30 +1,153 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Touch Input Test con Firebase</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Input Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        input, select, button, textarea {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+            display: block;
+            width: 100%;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        #textInput {
+            font-size: 16px;
+            display: none; /* El campo de texto no es accesible hasta iniciar */
+        }
+    </style>
 </head>
 <body>
-  <h1>Touch Input Test con Firebase</h1>
+    <h1>Touch Input Test</h1>
 
-  <!-- Campos de entrada -->
-  <label for="edad">Edad:</label>
-  <input type="number" id="edad"><br>
+    <form id="userForm">
+        <label for="age">Edad (solo 2 dígitos):</label>
+        <input type="number" id="age" name="age" placeholder="Ingrese su edad" min="10" max="99" required>
 
-  <label for="sexo">Sexo:</label>
-  <select id="sexo">
-    <option value="masculino">Masculino</option>
-    <option value="femenino">Femenino</option>
-    <option value="otro">Otro</option>
-    <option value="prefiero_no_decirlo">Prefiero no decirlo</option>
-  </select><br>
+        <label for="sex">Sexo:</label>
+        <select id="sex" name="sex" required>
+            <option value="masculino">Masculino</option>
+            <option value="femenino">Femenino</option>
+            <option value="otro">Otro</option>
+            <option value="prefiero_no_decirlo">Prefiero no decirlo</option>
+        </select>
 
-  <label for="texto">Texto:</label>
-  <textarea id="texto"></textarea><br>
+        <label for="textInput">Ingrese los datos que se le indicarán:</label>
+        <textarea id="textInput" name="textInput" placeholder="Ingrese el texto aquí" required></textarea>
 
-  <button id="btnEnviar">Enviar</button>
+        <button type="button" id="actionButton">Iniciar</button>
+    </form>
 
-  <!-- Cargamos nuestro script "main.js" como módulo -->
-  <script type="module" src="./main.js"></script>
+    <!-- Scripts de Firebase (versión modular) -->
+    <script type="module">
+        // Importar funciones de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+        // Configuración de tu proyecto Firebase
+        const firebaseConfig = {
+          apiKey: "AIza...",
+          authDomain: "touch-input-test.firebaseapp.com",
+          databaseURL: "https://touch-input-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "touch-input-test",
+          storageBucket: "touch-input-test.firebasestorage.app",
+          messagingSenderId: "999206060657",
+          appId: "1:999206060657:web:5af8cf061b05db6c0ad1d0"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Variables para el formulario
+        let actionButton = document.getElementById("actionButton");
+        let textInputField = document.getElementById("textInput");
+
+        // Deshabilitar el campo de texto hasta que se presione "Iniciar"
+        textInputField.disabled = true;
+
+        actionButton.addEventListener("click", function() {
+            if (actionButton.textContent === "Iniciar") {
+                let age = document.getElementById("age").value;
+                let sex = document.getElementById("sex").value;
+
+                if (!age || !sex) {
+                    alert("Por favor, ingrese todos los datos (edad y sexo).");
+                    return;
+                }
+                if (age < 10 || age > 99) {
+                    alert("La edad debe ser entre 10 y 99 años.");
+                    return;
+                }
+
+                // Iniciar el proceso
+                textInputField.style.display = "block";
+                textInputField.disabled = false;
+                textInputField.focus();
+                actionButton.textContent = "Finalizar";
+            } else {
+                // Ya es "Finalizar", guardamos en Firebase
+                let age = document.getElementById("age").value;
+                let sex = document.getElementById("sex").value;
+                let textInput = document.getElementById("textInput").value;
+
+                if (textInput.length === 0) {
+                    alert("Por favor ingrese el texto.");
+                    return;
+                }
+
+                actionButton.disabled = true;
+
+                // Guardar en Realtime Database
+                const nuevaRef = push(ref(db, "datos")); 
+                set(nuevaRef, {
+                  edad: age,
+                  sexo: sex,
+                  texto: textInput,
+                  timestamp: Date.now()
+                })
+                .then(() => {
+                  alert("Datos guardados en Firebase");
+                  actionButton.disabled = false;
+                  resetForm();
+                })
+                .catch(error => {
+                  alert("Error al guardar los datos: " + error);
+                  actionButton.disabled = false;
+                  console.error(error);
+                });
+            }
+        });
+
+        function resetForm() {
+            actionButton.textContent = "Iniciar";
+            textInputField.style.display = "none";
+            textInputField.disabled = true;
+            document.getElementById("age").value = "";
+            document.getElementById("sex").value = "masculino";
+            document.getElementById("textInput").value = "";
+        }
+
+        // Limitar la entrada de la edad a 2 dígitos
+        document.getElementById("age").addEventListener("input", function() {
+            let age = document.getElementById("age").value;
+            if (age.length > 2) {
+                document.getElementById("age").value = age.slice(0, 2);
+            }
+        });
+    </script>
 </body>
 </html>
