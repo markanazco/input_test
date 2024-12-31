@@ -132,6 +132,10 @@
                 let endTime = Date.now();
                 let timeSpent = endTime - startTime; 
 
+                // Asegurarse de que timeSpent y backspaceCount tienen valores válidos
+                console.log("Tiempo transcurrido:", timeSpent);
+                console.log("Cantidad de borrados:", backspaceCount);
+                
                 // Guardar en Realtime Database
                 const nuevaRef = push(ref(db, "datos")); 
                 set(nuevaRef, {
