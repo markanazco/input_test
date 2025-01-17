@@ -144,6 +144,10 @@
                 // Calcular el tiempo activo (diferencia entre tiempo total y tiempo inactivo)
                 let activeTime = timeSpent - inactiveTime;
 
+                // Mostrar el timestamp convertido a una fecha legible en la consola
+                const readableTimestamp = new Date(endTime).toLocaleString(); // Convertir timestamp a formato legible
+                console.log("Fecha y hora del registro:", readableTimestamp); // Mostrar fecha y hora legible
+
                 // Guardar datos en Firebase, todos los tiempos convertidos a segundos
                 const nuevaRef = push(ref(db, "datos"));
                 set(nuevaRef, {
