@@ -1,9 +1,36 @@
+// Calcular tiempo total transcurrido
+let endTime = Date.now(); // Obtener el tiempo actual en milisegundos
+let timeSpent = endTime - startTime; // Calcular el tiempo total en milisegundos
+
+// Si hubo actividad previa en el textarea, acumular el tiempo inactivo restante
+if (lastInputTime > 0) {
+    inactiveTime += endTime - lastInputTime; // Sumar el tiempo desde el último input hasta el final
+}
+
+// Calcular el tiempo activo (tiempo total menos tiempo inactivo)
+let activeTime = timeSpent - inactiveTime; // Tiempo activo en milisegundos
+
+// Guardar los datos en la base de datos Firebase
+const nuevaRef = push(ref(db, "datos")); // Crear una nueva referencia en la base de datos
 set(nuevaRef, {
-    edad: age,
-    sexo: sex,
-    texto: textInput,
-    timeSpent: (timeSpent / 1000).toFixed(2), // Convertir a segundos con 2 decimales
-    backspaceCount: backspaceCount,
-    inactiveTime: (inactiveTime / 1000).toFixed(2), // Convertir a segundos con 2 decimales
-    timestamp: endTime // Mantener el timestamp en milisegundos
+    edad: age, // Edad del usuario
+    sexo: sex, // Sexo del usuario
+    texto: textInput, // Texto ingresado por el usuario
+    timeSpent: (timeSpent / 1000).toFixed(2), // Tiempo total en segundos
+    inactiveTime: (inactiveTime / 1000).toFixed(2), // Tiempo inactivo en segundos
+    activeTime: (activeTime / 1000).toFixed(2), // Tiempo activo en segundos
+    backspaceCount: backspaceCount, // Número total de veces que se usó "borrar"
+    timestamp: endTime // Timestamp del momento en que finalizó la prueba (en milisegundos)
 })
+.then(() => {
+    // Acción a realizar si los datos se guardan correctamente
+    alert("Datos guardados en Firebase"); // Notificar al usuario que los datos se guardaron
+    actionButton.disabled = false; // Habilitar nuevamente el botón
+    resetForm(); // Restablecer el formulario para el próximo uso
+})
+.catch(error => {
+    // Manejo de errores al guardar datos
+    alert("Error al guardar los datos: " + error); // Mostrar el error al usuario
+    actionButton.disabled = false; // Habilitar nuevamente el botón incluso si hubo un error
+    console.error(error); // Imprimir el error en la consola para depuración
+});
