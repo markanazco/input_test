@@ -1,36 +1,190 @@
-// Calcular tiempo total transcurrido
-let endTime = Date.now(); // Obtener el tiempo actual en milisegundos
-let timeSpent = endTime - startTime; // Calcular el tiempo total en milisegundos
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Touch Input Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        input, select, button, textarea {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+            display: block;
+            width: 100%;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        #textInput {
+            font-size: 16px;
+            display: none; /* El campo de texto no es accesible hasta "Iniciar" */
+        }
+    </style>
+</head>
+<body>
+    <h1>Touch Input Test</h1>
 
-// Si hubo actividad previa en el textarea, acumular el tiempo inactivo restante
-if (lastInputTime > 0) {
-    inactiveTime += endTime - lastInputTime; // Sumar el tiempo desde el último input hasta el final
-}
+    <form id="userForm">
+        <label for="age">Edad (solo 2 dígitos):</label>
+        <input type="number" id="age" name="age" placeholder="Ingrese su edad" min="10" max="99" required>
 
-// Calcular el tiempo activo (tiempo total menos tiempo inactivo)
-let activeTime = timeSpent - inactiveTime; // Tiempo activo en milisegundos
+        <label for="sex">Sexo:</label>
+        <select id="sex" name="sex" required>
+            <option value="masculino">Masculino</option>
+            <option value="femenino">Femenino</option>
+            <option value="otro">Otro</option>
+            <option value="prefiero_no_decirlo">Prefiero no decirlo</option>
+        </select>
 
-// Guardar los datos en la base de datos Firebase
-const nuevaRef = push(ref(db, "datos")); // Crear una nueva referencia en la base de datos
-set(nuevaRef, {
-    edad: age, // Edad del usuario
-    sexo: sex, // Sexo del usuario
-    texto: textInput, // Texto ingresado por el usuario
-    timeSpent: (timeSpent / 1000).toFixed(2), // Tiempo total en segundos
-    inactiveTime: (inactiveTime / 1000).toFixed(2), // Tiempo inactivo en segundos
-    activeTime: (activeTime / 1000).toFixed(2), // Tiempo activo en segundos
-    backspaceCount: backspaceCount, // Número total de veces que se usó "borrar"
-    timestamp: endTime // Timestamp del momento en que finalizó la prueba (en milisegundos)
-})
-.then(() => {
-    // Acción a realizar si los datos se guardan correctamente
-    alert("Datos guardados en Firebase"); // Notificar al usuario que los datos se guardaron
-    actionButton.disabled = false; // Habilitar nuevamente el botón
-    resetForm(); // Restablecer el formulario para el próximo uso
-})
-.catch(error => {
-    // Manejo de errores al guardar datos
-    alert("Error al guardar los datos: " + error); // Mostrar el error al usuario
-    actionButton.disabled = false; // Habilitar nuevamente el botón incluso si hubo un error
-    console.error(error); // Imprimir el error en la consola para depuración
-});
+        <label for="textInput">Ingrese los datos que se le indicarán:</label>
+        <textarea id="textInput" name="textInput" placeholder="Ingrese el texto aquí" required></textarea>
+
+        <button type="button" id="actionButton">Iniciar</button>
+    </form>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfsRt...",
+            authDomain: "touch-input-test.firebaseapp.com",
+            databaseURL: "https://touch-input-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "touch-input-test",
+            storageBucket: "touch-input-test.firebasestorage.app",
+            messagingSenderId: "999206060657",
+            appId: "1:999206060657:web:5af8cf061b05db6c0ad1d0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let actionButton = document.getElementById("actionButton");
+        let textInputField = document.getElementById("textInput");
+
+        let startTime = 0;
+        let backspaceCount = 0;
+        let lastInputTime = 0;
+        let inactiveTime = 0;
+
+        textInputField.disabled = true;
+
+        // Detectar eventos de entrada y calcular tiempo inactivo
+        textInputField.addEventListener('input', function(e) {
+            const currentTime = Date.now();
+
+            if (lastInputTime > 0) {
+                // Acumular tiempo inactivo desde el último evento de entrada
+                inactiveTime += currentTime - lastInputTime;
+            }
+
+            lastInputTime = currentTime; // Actualizar el tiempo del último input
+
+            if (e.inputType === 'deleteContentBackward') {
+                backspaceCount++; // Incrementar contador de borrados
+            }
+        });
+
+        actionButton.addEventListener("click", function() {
+            if (actionButton.textContent === "Iniciar") {
+                let age = document.getElementById("age").value;
+                let sex = document.getElementById("sex").value;
+
+                if (!age || !sex) {
+                    alert("Por favor, ingrese todos los datos (edad y sexo).");
+                    return;
+                }
+                if (age < 10 || age > 99) {
+                    alert("La edad debe ser entre 10 y 99 años.");
+                    return;
+                }
+
+                // Iniciar: habilitar textarea y registrar el startTime
+                textInputField.style.display = "block";
+                textInputField.disabled = false;
+                textInputField.focus();
+                actionButton.textContent = "Finalizar";
+
+                startTime = Date.now();     // Guardar tiempo inicial
+                backspaceCount = 0;        // Reiniciar contador de borrados
+                inactiveTime = 0;          // Reiniciar tiempo inactivo
+                lastInputTime = 0;         // Reiniciar última actividad
+
+            } else {
+                // Al finalizar
+                let age = document.getElementById("age").value;
+                let sex = document.getElementById("sex").value;
+                let textInput = document.getElementById("textInput").value;
+
+                if (textInput.length === 0) {
+                    alert("Por favor ingrese el texto.");
+                    return;
+                }
+
+                actionButton.disabled = true;
+
+                // Calcular tiempo total transcurrido
+                let endTime = Date.now(); // Obtener el tiempo actual en milisegundos
+                let timeSpent = endTime - startTime; // Tiempo total en milisegundos
+
+                // Si hubo actividad previa, calcular tiempo inactivo
+                if (lastInputTime > 0) {
+                    inactiveTime += endTime - lastInputTime;
+                }
+
+                // Calcular el tiempo activo (diferencia entre tiempo total y tiempo inactivo)
+                let activeTime = timeSpent - inactiveTime;
+
+                // Guardar datos en Firebase, todos los tiempos convertidos a segundos
+                const nuevaRef = push(ref(db, "datos"));
+                set(nuevaRef, {
+                    edad: age, // Edad del usuario
+                    sexo: sex, // Sexo del usuario
+                    texto: textInput, // Texto ingresado
+                    timeSpent: (timeSpent / 1000).toFixed(2), // Tiempo total en segundos
+                    inactiveTime: (inactiveTime / 1000).toFixed(2), // Tiempo inactivo en segundos
+                    activeTime: (activeTime / 1000).toFixed(2), // Tiempo activo en segundos
+                    backspaceCount: backspaceCount, // Número total de borrados
+                    timestamp: endTime // Timestamp en milisegundos
+                })
+                .then(() => {
+                    alert("Datos guardados en Firebase");
+                    actionButton.disabled = false;
+                    resetForm(); // Restablecer formulario
+                })
+                .catch(error => {
+                    alert("Error al guardar los datos: " + error);
+                    actionButton.disabled = false;
+                    console.error(error);
+                });
+            }
+        });
+
+        function resetForm() {
+            actionButton.textContent = "Iniciar";
+            textInputField.style.display = "none";
+            textInputField.disabled = true;
+            document.getElementById("age").value = "";
+            document.getElementById("sex").value = "masculino";
+            document.getElementById("textInput").value = "";
+        }
+
+        // Limitar la entrada de la edad a 2 dígitos
+        document.getElementById("age").addEventListener("input", function() {
+            let age = document.getElementById("age").value;
+            if (age.length > 2) {
+                document.getElementById("age").value = age.slice(0, 2);
+            }
+        });
+    </script>
+</body>
+</html>
