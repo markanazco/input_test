@@ -144,11 +144,10 @@
                 // Calcular el tiempo activo (diferencia entre tiempo total y tiempo inactivo)
                 let activeTime = timeSpent - inactiveTime;
 
-                // Mostrar el timestamp convertido a una fecha legible en la consola
-                const readableTimestamp = new Date(endTime).toLocaleString(); // Convertir timestamp a formato legible
-                console.log("Fecha y hora del registro:", readableTimestamp); // Mostrar fecha y hora legible
+                // Convertir el timestamp a un formato legible para almacenarlo
+                const readableTimestamp = new Date(endTime).toLocaleString(); // Formatear el timestamp
 
-                // Guardar datos en Firebase, todos los tiempos convertidos a segundos
+                // Guardar datos en Firebase, incluyendo el timestamp legible
                 const nuevaRef = push(ref(db, "datos"));
                 set(nuevaRef, {
                     edad: age, // Edad del usuario
@@ -158,7 +157,8 @@
                     inactiveTime: (inactiveTime / 1000).toFixed(2), // Tiempo inactivo en segundos
                     activeTime: (activeTime / 1000).toFixed(2), // Tiempo activo en segundos
                     backspaceCount: backspaceCount, // Número total de borrados
-                    timestamp: endTime // Timestamp en milisegundos
+                    timestamp: endTime, // Timestamp en milisegundos
+                    readableTimestamp: readableTimestamp // Fecha y hora legibles
                 })
                 .then(() => {
                     alert("Datos guardados en Firebase");
